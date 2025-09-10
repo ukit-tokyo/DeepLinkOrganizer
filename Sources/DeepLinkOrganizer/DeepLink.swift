@@ -7,22 +7,15 @@
 
 import Foundation
 
-public enum DeepLinkAction: Equatable {
-  case none
-}
-
 public protocol DeepLink: Equatable {
-  var host: String? { get }
-  var path: String { get }
-  var queryItems: [String: String]? { get }
-  var action: DeepLinkAction { get }
+  associatedtype Action
 
-  func handle() -> DeepLinkAction
+  var path: String { get }
+  var queryItems: [URLQueryItem]? { get }
+
+  func handle(with queryItems: [URLQueryItem]?) -> Action
 }
 
 extension DeepLink {
-  public var host: String? { nil }
-  public var queryItems: [String: String]? { nil }
-
-  public func handle() -> DeepLinkAction { action }
+  public var queryItems: [URLQueryItem]? { nil }
 }

@@ -42,4 +42,31 @@ struct DeepLinkOrganizerTests {
     #expect(organizer.deepLinks[0] as? Mock2DeepLink == Mock2DeepLink())
     #expect(organizer.deepLinks[1] as? MockDeepLink == MockDeepLink())
   }
+
+  @Test
+  func handleURL() throws {
+    let organizer = DeepLinkOrganizer()
+
+    organizer.register(deepLinks: [
+      MyDeepLink(),
+      Mock2DeepLink(),
+    ])
+
+    organizer.set(config: .init(universalLinkHost: "example.com", customScheme: "myapp"))
+
+    let url = URL(string: "myapp://path")!
+    let link = try organizer.handle(url: url)
+    let action = link.handle()
+
+    #expect(action == .none)
+  }
 }
+
+struct MyDeepLink: DeepLink {
+  typealias DeepLinkAction = (() -> Void)
+  let path: String = "/path"
+  var action: DeepLinkAction {
+    { print("testing___") }
+  }
+}
+

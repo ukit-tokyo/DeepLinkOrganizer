@@ -3,22 +3,145 @@
 
 import Foundation
 
-public final class DeepLinkOrganizer {
-  private(set) public var deepLinks: [any DeepLink] = []
+public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Action {
+  private(set) public var deepLinks: [D] = []
+  private(set) public var config: Configuration?
 
-  public init(deepLinks: [any DeepLink] = []) {
+  public init(config: Configuration? = nil) {
+    self.config = config
+  }
+
+  public func set(config: Configuration) {
+    self.config = config
+  }
+
+  public func register(deepLinks: [D]) {
     self.deepLinks = deepLinks
   }
 
-  public func register(deepLinks: [any DeepLink]) {
-    self.deepLinks = deepLinks
-  }
-
-  public func append(deepLink: any DeepLink) {
+  public func append(deepLink: D) {
     self.deepLinks.append(deepLink)
   }
 
-  public func handle() -> DeepLinkAction {
-    .none
+  public func handle(url: URL) throws -> Action {
+    guard let config else { throw Error.configNotSet }
+
+    let comps = try parse(url: url)
+    let type = try linkType(comps: comps, config: config)
+    let link = try match(comps: comps, type: type)
+
+    return link.handle(with: comps.queryItems)
+  }
+
+  func parse(url: URL) throws -> URLComponents {
+    guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
+      comps.scheme != nil,
+      comps.host != nil
+    else {
+      throw Error.invalidURL
+    }
+
+    return comps
+  }
+
+  func linkType(comps: URLComponents, config: Configuration) throws -> LinkType {
+    guard let scheme = comps.scheme,
+      let host = comps.host
+    else {
+      throw Error.invalidURL
+    }
+
+    let type: LinkType =
+      if scheme == config.customScheme {
+        .customURLScheme
+      } else if scheme == "http" || scheme == "https", host == config.universalLinkHost {
+        .universalLink
+      } else {
+        throw Error.unexpectedURL
+      }
+
+    return type
+  }
+
+  func match(comps: URLComponents, type: LinkType) throws -> D {
+    switch type {
+    case .universalLink:
+      try matchUniversalLink(comps: comps)
+    case .customURLScheme:
+      try matchCustomURLScheme(comps: comps)
+    }
+  }
+
+  func matchUniversalLink(comps: URLComponents) throws -> D {
+    let path = comps.path
+    let queryItems = comps.queryItems
+
+    let firstMatch = deepLinks.first(where: { link in
+      if let query = link.queryItems {
+        return link.path == path && query == queryItems
+      }
+      return link.path == path
+    })
+
+    guard let firstMatch else {
+      throw Error.noMatchingDeepLink
+    }
+
+    return firstMatch
+  }
+
+  func matchCustomURLScheme(comps: URLComponents) throws -> D {
+    guard let host = comps.host else {
+      throw Error.invalidURL
+    }
+
+    let path = comps.path
+    let fullPath = "/" + host + path
+    let queryItems = comps.queryItems
+
+    let firstMatch = deepLinks.first(where: { link in
+      if let query = link.queryItems {
+        return link.path == fullPath && query == queryItems
+      }
+      return link.path == fullPath
+    })
+
+    guard let firstMatch else {
+      throw Error.noMatchingDeepLink
+    }
+
+    return firstMatch
+  }
+}
+
+extension DeepLinkOrganizer {
+  public struct Configuration {
+    public let universalLinkHost: String?
+    public let customScheme: String?
+  }
+
+  public enum Error: Swift.Error {
+    case invalidURL
+    case configNotSet
+    case unexpectedURL
+    case noMatchingDeepLink
+
+    public var localizedDescription: String {
+      switch self {
+      case .invalidURL:
+        return "Failed to parse URL. Check URL is in correct format."
+      case .configNotSet:
+        return "Configuration not set. Set configuration with `set(config:)` before handling URLs."
+      case .unexpectedURL:
+        return "URL scheme or host is unexpected. Check your `Configuration` settings."
+      case .noMatchingDeepLink:
+        return "No matching deep link was found."
+      }
+    }
+  }
+
+  enum LinkType {
+    case universalLink
+    case customURLScheme
   }
 }
