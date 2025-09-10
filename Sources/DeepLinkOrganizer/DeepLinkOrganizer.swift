@@ -30,7 +30,7 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     let type = try linkType(comps: comps, config: config)
     let link = try match(comps: comps, type: type)
 
-    return link.handle(with: comps.queryItems)
+    return link.handle(comps)
   }
 
   func parse(url: URL) throws -> URLComponents {
@@ -77,10 +77,15 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     let queryItems = comps.queryItems
 
     let firstMatch = deepLinks.first(where: { link in
-      if let query = link.queryItems {
-        return link.path == path && query == queryItems
+      guard let queryItems, let keys = link.queryKeys, !keys.isEmpty else {
+        return link.path == path
       }
-      return link.path == path
+
+      let keysContained = keys.allSatisfy { key in
+        queryItems.contains(where: { $0.name == key })
+      }
+
+      return link.path == path && keysContained
     })
 
     guard let firstMatch else {
@@ -100,10 +105,15 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     let queryItems = comps.queryItems
 
     let firstMatch = deepLinks.first(where: { link in
-      if let query = link.queryItems {
-        return link.path == fullPath && query == queryItems
+      guard let queryItems, let keys = link.queryKeys, !keys.isEmpty else {
+        return link.path == fullPath
       }
-      return link.path == fullPath
+
+      let keysContained = keys.allSatisfy { key in
+        queryItems.contains(where: { $0.name == key })
+      }
+
+      return link.path == fullPath && keysContained
     })
 
     guard let firstMatch else {

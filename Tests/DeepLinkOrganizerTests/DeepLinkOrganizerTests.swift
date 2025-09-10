@@ -3,70 +3,87 @@ import Testing
 
 @testable import DeepLinkOrganizer
 
-struct MockDeepLink: DeepLink {
-  let path: String = "/path"
-  let action: DeepLinkAction = .none
+enum MockAction {
+  case action1
+  case action2
+  case action3
 }
 
-struct Mock2DeepLink: DeepLink {
-  let path: String = "/path2"
-  let action: DeepLinkAction = .none
+struct MockDeepLink: DeepLink {
+  typealias Action = MockAction
+
+  let path: String
+  let queryKeys: [String]?
+  let handle: (URLComponents) -> MockAction
 }
 
 @Suite
 struct DeepLinkOrganizerTests {
+  let mockDeepLink1 = MockDeepLink(
+    path: "/path1",
+    queryKeys: nil,
+    handle: { _ in .action1 }
+  )
+
+  let mockDeepLink2 = MockDeepLink(
+    path: "/path2",
+    queryKeys: nil,
+    handle: { _ in .action2 }
+  )
+
+  let mockDeepLink3 = MockDeepLink(
+    path: "/path3",
+    queryKeys: nil,
+    handle: { _ in .action3 }
+  )
+
   @Test
   func registerDeepLinks() {
-    let organizer = DeepLinkOrganizer()
+    let organizer = DeepLinkOrganizer<MockDeepLink, MockAction>()
 
     organizer.register(deepLinks: [
-      MockDeepLink(),
-      Mock2DeepLink(),
+      mockDeepLink1,
+      mockDeepLink2,
     ])
 
     #expect(organizer.deepLinks.count == 2)
-    #expect(organizer.deepLinks[0] as! MockDeepLink == MockDeepLink())
-    #expect(organizer.deepLinks[1] as! Mock2DeepLink == Mock2DeepLink())
+    #expect(organizer.deepLinks[0] == mockDeepLink1)
+    #expect(organizer.deepLinks[1] == mockDeepLink2)
 
     organizer.register(deepLinks: [])
   }
 
   @Test
   func appendDeepLink() {
-    let organizer = DeepLinkOrganizer()
+    let organizer = DeepLinkOrganizer<MockDeepLink, MockAction>()
 
-    organizer.append(deepLink: Mock2DeepLink())
-    organizer.append(deepLink: MockDeepLink())
+    organizer.register(deepLinks: [
+      mockDeepLink1
+    ])
 
-    #expect(organizer.deepLinks.count == 2)
-    #expect(organizer.deepLinks[0] as? Mock2DeepLink == Mock2DeepLink())
-    #expect(organizer.deepLinks[1] as? MockDeepLink == MockDeepLink())
+    organizer.append(deepLink: mockDeepLink2)
+    organizer.append(deepLink: mockDeepLink3)
+
+    #expect(organizer.deepLinks.count == 3)
+    #expect(organizer.deepLinks[0] == mockDeepLink1)
+    #expect(organizer.deepLinks[1] == mockDeepLink2)
+    #expect(organizer.deepLinks[2] == mockDeepLink3)
   }
 
   @Test
   func handleURL() throws {
-    let organizer = DeepLinkOrganizer()
+    let organizer = DeepLinkOrganizer<MockDeepLink, MockAction>()
+
+    organizer.set(config: .init(universalLinkHost: "mock_host.com", customScheme: "mockscheme"))
 
     organizer.register(deepLinks: [
-      MyDeepLink(),
-      Mock2DeepLink(),
+      mockDeepLink1,
+      mockDeepLink2,
     ])
 
-    organizer.set(config: .init(universalLinkHost: "example.com", customScheme: "myapp"))
+    let url = URL(string: "mockscheme://path1")!
+    let action = try organizer.handle(url: url)
 
-    let url = URL(string: "myapp://path")!
-    let link = try organizer.handle(url: url)
-    let action = link.handle()
-
-    #expect(action == .none)
+    #expect(action == .action1)
   }
 }
-
-struct MyDeepLink: DeepLink {
-  typealias DeepLinkAction = (() -> Void)
-  let path: String = "/path"
-  var action: DeepLinkAction {
-    { print("testing___") }
-  }
-}
-

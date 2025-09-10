@@ -11,11 +11,15 @@ public protocol DeepLink: Equatable {
   associatedtype Action
 
   var path: String { get }
-  var queryItems: [URLQueryItem]? { get }
+  var queryKeys: [String]? { get }
 
-  func handle(with queryItems: [URLQueryItem]?) -> Action
+  var handle: (URLComponents) -> Action { get }
 }
 
 extension DeepLink {
-  public var queryItems: [URLQueryItem]? { nil }
+  static func == (lhs: Self, rhs: Self) -> Bool {
+    lhs.path == rhs.path && lhs.queryItems == rhs.queryItems
+  }
+
+  public var queryItems: [String]? { nil }
 }
