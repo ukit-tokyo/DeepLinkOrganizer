@@ -1,6 +1,11 @@
+import Foundation
 import Testing
+
 @testable import DeepLinkOrganizer
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+@Test func handle() async throws {
+  let url = URL(string: "https://example.com/path")!
+  let organizer = DeepLinkOrganizer(url: url)
+  let result = organizer.handle()
+  #expect(result == "handled")
 }
