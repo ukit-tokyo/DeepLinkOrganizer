@@ -3,14 +3,22 @@
 
 import Foundation
 
-public class DeepLinkOrganizer {
-  let url: URL
+public final class DeepLinkOrganizer {
+  private(set) public var deepLinks: [any DeepLink] = []
 
-  init(url: URL) {
-    self.url = url
+  public init(deepLinks: [any DeepLink] = []) {
+    self.deepLinks = deepLinks
   }
 
-  func handle() -> String {
-    "handled"
+  public func register(deepLinks: [any DeepLink]) {
+    self.deepLinks = deepLinks
+  }
+
+  public func append(deepLink: any DeepLink) {
+    self.deepLinks.append(deepLink)
+  }
+
+  public func handle() -> DeepLinkAction {
+    .none
   }
 }
