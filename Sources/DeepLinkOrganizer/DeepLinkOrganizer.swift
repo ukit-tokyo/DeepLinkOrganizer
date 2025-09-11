@@ -33,23 +33,25 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     return link.handle(comps)
   }
 
-  func parse(url: URL) throws -> URLComponents {
+  func parse(url: URL) throws -> DeepLinkComponents {
     guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
-      comps.scheme != nil,
-      comps.host != nil
-    else {
-      throw Error.invalidURL
-    }
-
-    return comps
-  }
-
-  func linkType(comps: URLComponents, config: Configuration) throws -> LinkType {
-    guard let scheme = comps.scheme,
+      let scheme = comps.scheme,
       let host = comps.host
     else {
       throw Error.invalidURL
     }
+
+    return .init(
+      scheme: scheme,
+      host: host,
+      path: comps.path,
+      queryItems: comps.queryItems
+    )
+  }
+
+  func linkType(comps: DeepLinkComponents, config: Configuration) throws -> LinkType {
+    let scheme = comps.scheme
+    let host = comps.host
 
     let type: LinkType =
       if scheme == config.customScheme {
@@ -63,7 +65,7 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     return type
   }
 
-  func match(comps: URLComponents, type: LinkType) throws -> D {
+  func match(comps: DeepLinkComponents, type: LinkType) throws -> D {
     switch type {
     case .universalLink:
       try matchUniversalLink(comps: comps)
@@ -72,7 +74,7 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     }
   }
 
-  func matchUniversalLink(comps: URLComponents) throws -> D {
+  func matchUniversalLink(comps: DeepLinkComponents) throws -> D {
     let path = comps.path
     let queryItems = comps.queryItems
 
@@ -95,11 +97,8 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     return firstMatch
   }
 
-  func matchCustomURLScheme(comps: URLComponents) throws -> D {
-    guard let host = comps.host else {
-      throw Error.invalidURL
-    }
-
+  func matchCustomURLScheme(comps: DeepLinkComponents) throws -> D {
+    let host = comps.host
     let path = comps.path
     let fullPath = "/" + host + path
     let queryItems = comps.queryItems

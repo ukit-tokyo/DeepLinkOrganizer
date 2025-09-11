@@ -14,7 +14,7 @@ struct MockDeepLink: DeepLink {
 
   let path: String
   let queryKeys: [String]?
-  let handle: (URLComponents) -> MockAction
+  let handle: (DeepLinkComponents) -> MockAction
 }
 
 @Suite

@@ -13,7 +13,7 @@ public protocol DeepLink: Equatable {
   var path: String { get }
   var queryKeys: [String]? { get }
 
-  var handle: (URLComponents) -> Action { get }
+  var handle: (DeepLinkComponents) -> Action { get }
 }
 
 extension DeepLink {
