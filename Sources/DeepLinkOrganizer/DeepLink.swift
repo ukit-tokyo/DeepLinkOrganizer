@@ -8,12 +8,9 @@
 import Foundation
 
 public protocol DeepLink: Equatable {
-  associatedtype Action
-
   var path: String { get }
   var queryKeys: [String]? { get }
-
-  var handle: (DeepLinkComponents) -> Action { get }
+  var handle: (DeepLinkComponents) -> Void { get }
 }
 
 extension DeepLink {

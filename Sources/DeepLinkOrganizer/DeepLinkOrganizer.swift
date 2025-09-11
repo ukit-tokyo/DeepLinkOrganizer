@@ -3,8 +3,8 @@
 
 import Foundation
 
-public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Action {
-  private(set) public var deepLinks: [D] = []
+public final class DeepLinkOrganizer {
+  private(set) public var deepLinks: [any DeepLink] = []
   private(set) public var config: Configuration?
 
   public init(config: Configuration? = nil) {
@@ -15,15 +15,15 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     self.config = config
   }
 
-  public func register(deepLinks: [D]) {
+  public func register(deepLinks: [any DeepLink]) {
     self.deepLinks = deepLinks
   }
 
-  public func append(deepLink: D) {
+  public func append(deepLink: any DeepLink) {
     self.deepLinks.append(deepLink)
   }
 
-  public func handle(url: URL) throws -> Action {
+  public func handle(url: URL) throws {
     guard let config else { throw Error.configNotSet }
 
     let comps = try parse(url: url)
@@ -65,7 +65,7 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     return type
   }
 
-  func match(comps: DeepLinkComponents, type: LinkType) throws -> D {
+  func match(comps: DeepLinkComponents, type: LinkType) throws -> any DeepLink {
     switch type {
     case .universalLink:
       try matchUniversalLink(comps: comps)
@@ -74,7 +74,7 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     }
   }
 
-  func matchUniversalLink(comps: DeepLinkComponents) throws -> D {
+  func matchUniversalLink(comps: DeepLinkComponents) throws -> any DeepLink {
     let path = comps.path
     let queryItems = comps.queryItems
 
@@ -97,7 +97,7 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
     return firstMatch
   }
 
-  func matchCustomURLScheme(comps: DeepLinkComponents) throws -> D {
+  func matchCustomURLScheme(comps: DeepLinkComponents) throws -> any DeepLink {
     let host = comps.host
     let path = comps.path
     let fullPath = "/" + host + path
