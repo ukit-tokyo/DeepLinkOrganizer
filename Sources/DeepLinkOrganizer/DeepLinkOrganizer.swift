@@ -124,7 +124,7 @@ public final class DeepLinkOrganizer<D: DeepLink, Action> where D.Action == Acti
 }
 
 extension DeepLinkOrganizer {
-  public struct Configuration {
+  public struct Configuration: Equatable {
     public let universalLinkHost: String?
     public let customScheme: String?
   }

@@ -38,8 +38,25 @@ struct DeepLinkOrganizerTests {
   )
 
   @Test
+  func setConfiguration() {
+    let organizer = DeepLinkOrganizer<MockDeepLink, MockAction>()
+
+    #expect(organizer.config == nil)
+
+    let config = DeepLinkOrganizer<MockDeepLink, MockAction>.Configuration(
+      universalLinkHost: "mock_host.com",
+      customScheme: "mockscheme"
+    )
+    organizer.set(config: config)
+
+    #expect(organizer.config == config)
+  }
+
+  @Test
   func registerDeepLinks() {
     let organizer = DeepLinkOrganizer<MockDeepLink, MockAction>()
+
+    #expect(organizer.deepLinks.isEmpty)
 
     organizer.register(deepLinks: [
       mockDeepLink1,
@@ -56,6 +73,8 @@ struct DeepLinkOrganizerTests {
   @Test
   func appendDeepLink() {
     let organizer = DeepLinkOrganizer<MockDeepLink, MockAction>()
+
+    #expect(organizer.deepLinks.isEmpty)
 
     organizer.register(deepLinks: [
       mockDeepLink1
