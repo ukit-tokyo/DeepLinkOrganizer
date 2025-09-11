@@ -7,9 +7,29 @@
 
 import Foundation
 
-public struct DeepLinkComponents {
+struct DeepLinkComponents {
+  let scheme: String
+  let fullPath: String
+  let paths: [String]
+  let queryItems: [String: String]?
+
+  var host: String? {
+    paths.first
+  }
+}
+
+public struct DeepLinkExtraction {
   public let scheme: String
-  public let host: String
-  public let path: String
-  public let queryItems: [URLQueryItem]?
+  public let fullPath: String
+  public let paths: [String]
+  public let targetID: String?
+  public let queryItems: [String: String]?
+}
+
+extension Array where Element == URLQueryItem {
+  var toDictionary: [String: String] {
+    self.reduce(into: [:]) { result, item in
+      result[item.name] = item.value ?? ""
+    }
+  }
 }

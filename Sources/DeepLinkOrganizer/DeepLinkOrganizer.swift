@@ -29,8 +29,9 @@ public final class DeepLinkOrganizer {
     let comps = try parse(url: url)
     let type = try linkType(comps: comps, config: config)
     let link = try match(comps: comps, type: type)
+    let extracted = try extract(comps: comps, link: link)
 
-    return link.handle(comps)
+    link.handle(extracted)
   }
 
   func parse(url: URL) throws -> DeepLinkComponents {
@@ -41,11 +42,17 @@ public final class DeepLinkOrganizer {
       throw Error.invalidURL
     }
 
+    let fullPath = host + comps.path
+    let paths =
+      fullPath
+      .components(separatedBy: "/")
+      .filter { !$0.isEmpty }
+
     return .init(
       scheme: scheme,
-      host: host,
-      path: comps.path,
-      queryItems: comps.queryItems
+      fullPath: fullPath,
+      paths: paths,
+      queryItems: comps.queryItems?.toDictionary
     )
   }
 
@@ -75,7 +82,7 @@ public final class DeepLinkOrganizer {
   }
 
   func matchUniversalLink(comps: DeepLinkComponents) throws -> any DeepLink {
-    let path = comps.path
+    let path = comps.fullPath
     let queryItems = comps.queryItems
 
     let firstMatch = deepLinks.first(where: { link in
@@ -84,7 +91,7 @@ public final class DeepLinkOrganizer {
       }
 
       let keysContained = keys.allSatisfy { key in
-        queryItems.contains(where: { $0.name == key })
+        queryItems.contains(where: { $0.key == key })
       }
 
       return link.path == path && keysContained
@@ -98,21 +105,19 @@ public final class DeepLinkOrganizer {
   }
 
   func matchCustomURLScheme(comps: DeepLinkComponents) throws -> any DeepLink {
-    let host = comps.host
-    let path = comps.path
-    let fullPath = "/" + host + path
+    let matchPath = "/" + comps.fullPath
     let queryItems = comps.queryItems
 
     let firstMatch = deepLinks.first(where: { link in
       guard let queryItems, let keys = link.queryKeys, !keys.isEmpty else {
-        return link.path == fullPath
+        return link.path == matchPath
       }
 
       let keysContained = keys.allSatisfy { key in
-        queryItems.contains(where: { $0.name == key })
+        queryItems.contains(where: { $0.key == key })
       }
 
-      return link.path == fullPath && keysContained
+      return link.path == matchPath && keysContained
     })
 
     guard let firstMatch else {
@@ -120,6 +125,30 @@ public final class DeepLinkOrganizer {
     }
 
     return firstMatch
+  }
+
+  func extract(comps: DeepLinkComponents, link: any DeepLink) throws -> DeepLinkExtraction {
+    guard let type = link.extractionType,
+      case .pathID(let targetPath) = type
+    else {
+      return DeepLinkExtraction(
+        scheme: comps.scheme,
+        fullPath: comps.fullPath,
+        paths: comps.paths,
+        targetID: nil,
+        queryItems: comps.queryItems
+      )
+    }
+
+    let targetID = comps.paths.next(of: targetPath)
+
+    return DeepLinkExtraction(
+      scheme: comps.scheme,
+      fullPath: comps.fullPath,
+      paths: comps.paths,
+      targetID: targetID,
+      queryItems: comps.queryItems
+    )
   }
 }
 
@@ -152,5 +181,21 @@ extension DeepLinkOrganizer {
   enum LinkType {
     case universalLink
     case customURLScheme
+  }
+}
+
+extension Array where Element: Equatable {
+  func next(of element: Element) -> Element? {
+    guard let index = self.firstIndex(of: element) else {
+      return nil
+    }
+
+    let nextIndex = index + 1
+
+    guard nextIndex < self.count else {
+      return nil
+    }
+
+    return self[nextIndex]
   }
 }

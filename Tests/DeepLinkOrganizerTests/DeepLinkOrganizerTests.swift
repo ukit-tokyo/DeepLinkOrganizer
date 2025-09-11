@@ -6,27 +6,28 @@ import Testing
 struct MockDeepLink: DeepLink {
   let path: String
   let queryKeys: [String]?
-  let handle: (DeepLinkComponents) -> Void
+  let extractionType: ExtractionType?
+  let handle: (DeepLinkExtraction) -> Void
 }
 
 @Suite
 struct DeepLinkOrganizerTests {
   let mockDeepLink1 = MockDeepLink(
     path: "/path1",
-    queryKeys: nil,
-    handle: { comps in }
+    queryKeys: nil, extractionType: nil,
+    handle: { _ in }
   )
 
   let mockDeepLink2 = MockDeepLink(
     path: "/path2",
-    queryKeys: nil,
-    handle: { comps in }
+    queryKeys: nil, extractionType: nil,
+    handle: { _ in }
   )
 
   let mockDeepLink3 = MockDeepLink(
     path: "/path3",
-    queryKeys: nil,
-    handle: { comps in }
+    queryKeys: nil, extractionType: nil,
+    handle: { _ in }
   )
 
   @Test
@@ -86,13 +87,13 @@ struct DeepLinkOrganizerTests {
     let organizer = DeepLinkOrganizer()
 
     let mockDeepLink = MockDeepLink(
-      path: "/host/path",
-      queryKeys: nil,
+      path: "/this/is/path",
+      queryKeys: nil, extractionType: .pathID("this"),
       handle: { comps in
         #expect(comps.scheme == "mockscheme")
-        #expect(comps.host == "host")
-        #expect(comps.path == "/path")
-        #expect(comps.queryItems == [URLQueryItem(name: "key", value: "value")])
+        #expect(comps.fullPath == "this/is/path")
+        #expect(comps.targetID == "is")
+        #expect(comps.queryItems == ["key": "value"])
       }
     )
 
@@ -102,7 +103,7 @@ struct DeepLinkOrganizerTests {
       mockDeepLink,
     ])
 
-    let url = URL(string: "mockscheme://host/path?key=value")!
+    let url = URL(string: "mockscheme://this/is/path?key=value")!
     try organizer.handle(url: url)
   }
 }

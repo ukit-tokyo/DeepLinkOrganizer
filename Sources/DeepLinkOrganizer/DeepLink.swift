@@ -7,16 +7,22 @@
 
 import Foundation
 
+public enum ExtractionType {
+  case pathID(String)
+}
+
 public protocol DeepLink: Equatable {
   var path: String { get }
   var queryKeys: [String]? { get }
-  var handle: (DeepLinkComponents) -> Void { get }
+  var extractionType: ExtractionType? { get }
+  var handle: (DeepLinkExtraction) -> Void { get }
 }
 
 extension DeepLink {
   static func == (lhs: Self, rhs: Self) -> Bool {
-    lhs.path == rhs.path && lhs.queryItems == rhs.queryItems
+    lhs.path == rhs.path && lhs.queryKeys == rhs.queryKeys
   }
 
-  public var queryItems: [String]? { nil }
+  public var queryKeys: [String]? { nil }
+  public var extractionType: ExtractionType? { nil }
 }
