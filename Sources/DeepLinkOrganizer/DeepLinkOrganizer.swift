@@ -24,7 +24,7 @@ public final class DeepLinkOrganizer {
   }
 
   public func handle(url: URL) throws {
-    guard let config else { throw Error.configNotSet }
+    guard let config else { throw DeepLinkError.configNotSet }
 
     let comps = try parse(url: url)
     let type = try linkType(comps: comps, config: config)
@@ -36,24 +36,13 @@ public final class DeepLinkOrganizer {
 
   func parse(url: URL) throws -> DeepLinkComponents {
     guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
-      let scheme = comps.scheme,
-      let host = comps.host
+      comps.scheme != nil,
+      comps.host != nil
     else {
-      throw Error.invalidURL
+      throw DeepLinkError.invalidURL
     }
 
-    let fullPath = host + comps.path
-    let paths =
-      fullPath
-      .components(separatedBy: "/")
-      .filter { !$0.isEmpty }
-
-    return .init(
-      scheme: scheme,
-      fullPath: fullPath,
-      paths: paths,
-      queryItems: comps.queryItems?.toDictionary
-    )
+    return DeepLinkComponents(urlComponents: comps)
   }
 
   func linkType(comps: DeepLinkComponents, config: Configuration) throws -> LinkType {
@@ -63,10 +52,10 @@ public final class DeepLinkOrganizer {
     let type: LinkType =
       if scheme == config.customScheme {
         .customURLScheme
-      } else if scheme == "http" || scheme == "https", host == config.universalLinkHost {
+      } else if host == config.universalLinkHost {
         .universalLink
       } else {
-        throw Error.unexpectedURL
+        throw DeepLinkError.unexpectedURL
       }
 
     return type
@@ -82,46 +71,56 @@ public final class DeepLinkOrganizer {
   }
 
   func matchUniversalLink(comps: DeepLinkComponents) throws -> any DeepLink {
-    let path = comps.fullPath
+    let path = comps.path
     let queryItems = comps.queryItems
 
     let firstMatch = deepLinks.first(where: { link in
       guard let queryItems, let keys = link.queryKeys, !keys.isEmpty else {
-        return link.path == path
+        return matchPath(path, expect: link.path, pattern: link.matchPathPattern)
       }
 
       let keysContained = keys.allSatisfy { key in
         queryItems.contains(where: { $0.key == key })
       }
 
-      return link.path == path && keysContained
+      return keysContained
+      && self.matchPath(
+          path,
+          expect: link.path,
+          pattern: link.matchPathPattern
+        )
     })
 
     guard let firstMatch else {
-      throw Error.noMatchingDeepLink
+      throw DeepLinkError.noMatchingDeepLink
     }
 
     return firstMatch
   }
 
   func matchCustomURLScheme(comps: DeepLinkComponents) throws -> any DeepLink {
-    let matchPath = "/" + comps.fullPath
+    let path = comps.fullPath
     let queryItems = comps.queryItems
 
     let firstMatch = deepLinks.first(where: { link in
       guard let queryItems, let keys = link.queryKeys, !keys.isEmpty else {
-        return link.path == matchPath
+        return self.matchPath(path, expect: link.path, pattern: link.matchPathPattern)
       }
 
       let keysContained = keys.allSatisfy { key in
         queryItems.contains(where: { $0.key == key })
       }
 
-      return link.path == matchPath && keysContained
+      return keysContained
+        && self.matchPath(
+          path,
+          expect: link.path,
+          pattern: link.matchPathPattern
+        )
     })
 
     guard let firstMatch else {
-      throw Error.noMatchingDeepLink
+      throw DeepLinkError.noMatchingDeepLink
     }
 
     return firstMatch
@@ -129,26 +128,36 @@ public final class DeepLinkOrganizer {
 
   func extract(comps: DeepLinkComponents, link: any DeepLink) throws -> DeepLinkExtraction {
     guard let type = link.extractionType,
-      case .pathID(let targetPath) = type
+      case .nextPathOf(let path) = type
     else {
       return DeepLinkExtraction(
-        scheme: comps.scheme,
-        fullPath: comps.fullPath,
-        paths: comps.paths,
-        targetID: nil,
-        queryItems: comps.queryItems
+        comps: comps,
+        targetPath: nil
       )
     }
 
-    let targetID = comps.paths.next(of: targetPath)
+    let target = comps.paths.next(of: path)
 
     return DeepLinkExtraction(
-      scheme: comps.scheme,
-      fullPath: comps.fullPath,
-      paths: comps.paths,
-      targetID: targetID,
-      queryItems: comps.queryItems
+      comps: comps,
+      targetPath: target
     )
+  }
+
+  func matchPath(_ path: String, expect: String, pattern: MatchPathPattern) -> Bool {
+    let expect = trimSlashes(expect)
+    let path = trimSlashes(path)
+
+    return switch pattern {
+    case .startsWith:
+      path.starts(with: expect)
+    case .contains:
+      path.contains(expect)
+    }
+  }
+
+  func trimSlashes(_ str: String) -> String {
+    str.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
   }
 }
 
@@ -158,44 +167,8 @@ extension DeepLinkOrganizer {
     public let customScheme: String?
   }
 
-  public enum Error: Swift.Error {
-    case invalidURL
-    case configNotSet
-    case unexpectedURL
-    case noMatchingDeepLink
-
-    public var localizedDescription: String {
-      switch self {
-      case .invalidURL:
-        return "Failed to parse URL. Check URL is in correct format."
-      case .configNotSet:
-        return "Configuration not set. Set configuration with `set(config:)` before handling URLs."
-      case .unexpectedURL:
-        return "URL scheme or host is unexpected. Check your `Configuration` settings."
-      case .noMatchingDeepLink:
-        return "No matching deep link was found."
-      }
-    }
-  }
-
   enum LinkType {
     case universalLink
     case customURLScheme
-  }
-}
-
-extension Array where Element: Equatable {
-  func next(of element: Element) -> Element? {
-    guard let index = self.firstIndex(of: element) else {
-      return nil
-    }
-
-    let nextIndex = index + 1
-
-    guard nextIndex < self.count else {
-      return nil
-    }
-
-    return self[nextIndex]
   }
 }

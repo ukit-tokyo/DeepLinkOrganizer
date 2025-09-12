@@ -7,29 +7,81 @@
 
 import Foundation
 
-struct DeepLinkComponents {
+struct DeepLinkComponents: Equatable {
   let scheme: String
+  let host: String
+  let path: String
   let fullPath: String
   let paths: [String]
   let queryItems: [String: String]?
 
-  var host: String? {
-    paths.first
+  init (
+    scheme: String,
+    host: String,
+    path: String,
+    fullPath: String,
+    paths: [String],
+    queryItems: [String: String]?
+  ) {
+    self.scheme = scheme
+    self.host = host
+    self.path = path
+    self.fullPath = fullPath
+    self.paths = paths
+    self.queryItems = queryItems
+  }
+
+  init(urlComponents: URLComponents) {
+    let host = urlComponents.host ?? ""
+    let fullPath = host + urlComponents.path
+
+    self.scheme = urlComponents.scheme ?? ""
+    self.host = host
+    self.path = urlComponents.path
+    self.fullPath = fullPath
+    self.paths = fullPath
+      .components(separatedBy: "/")
+      .filter { !$0.isEmpty }
+
+    self.queryItems = urlComponents.queryItems?.toDictionary
   }
 }
 
-public struct DeepLinkExtraction {
+public struct DeepLinkExtraction: Equatable {
   public let scheme: String
+  public let host: String
+  public let path: String
   public let fullPath: String
   public let paths: [String]
-  public let targetID: String?
+  public let targetPath: String?
   public let queryItems: [String: String]?
-}
 
-extension Array where Element == URLQueryItem {
-  var toDictionary: [String: String] {
-    self.reduce(into: [:]) { result, item in
-      result[item.name] = item.value ?? ""
-    }
+  public init (
+    scheme: String,
+    host: String,
+    path: String,
+    fullPath: String,
+    paths: [String],
+    targetPath: String?,
+    queryItems: [String: String]?
+  ) {
+    self.scheme = scheme
+    self.host = host
+    self.path = path
+    self.fullPath = fullPath
+    self.paths = paths
+    self.targetPath = targetPath
+    self.queryItems = queryItems
+  }
+
+  init(comps: DeepLinkComponents, targetPath: String?) {
+    self.scheme = comps.scheme
+    self.host = comps.host
+    self.path = comps.path
+    self.fullPath = comps.fullPath
+    self.paths = comps.paths
+    self.queryItems = comps.queryItems
+
+    self.targetPath = targetPath
   }
 }
