@@ -7,8 +7,12 @@ public final class DeepLinkOrganizer {
   private(set) public var deepLinks: [any DeepLink] = []
   private(set) public var config: Configuration?
 
-  public init(config: Configuration? = nil) {
+  public init(
+    config: Configuration? = nil,
+    deepLinks: [any DeepLink] = []
+  ) {
     self.config = config
+    self.deepLinks = deepLinks
   }
 
   public func set(config: Configuration) {
