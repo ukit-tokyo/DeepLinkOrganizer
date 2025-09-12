@@ -2,7 +2,7 @@
 //  File.swift
 //  DeepLinkOrganizer
 //
-//  Created by Taichi Yuki on 2025/09/12.
+//  Created by UKit Studio on 2025/09/12.
 //
 
 import Foundation

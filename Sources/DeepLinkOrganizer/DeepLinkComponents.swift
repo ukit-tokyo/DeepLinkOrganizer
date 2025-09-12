@@ -2,7 +2,7 @@
 //  File.swift
 //  DeepLinkOrganizer
 //
-//  Created by Taichi Yuki on 2025/09/11.
+//  Created by UKit Studio on 2025/09/11.
 //
 
 import Foundation
@@ -14,22 +14,6 @@ struct DeepLinkComponents: Equatable {
   let fullPath: String
   let paths: [String]
   let queryItems: [String: String]?
-
-  init (
-    scheme: String,
-    host: String,
-    path: String,
-    fullPath: String,
-    paths: [String],
-    queryItems: [String: String]?
-  ) {
-    self.scheme = scheme
-    self.host = host
-    self.path = path
-    self.fullPath = fullPath
-    self.paths = paths
-    self.queryItems = queryItems
-  }
 
   init(urlComponents: URLComponents) {
     let host = urlComponents.host ?? ""

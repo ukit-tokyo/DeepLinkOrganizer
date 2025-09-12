@@ -2,7 +2,7 @@
 //  File.swift
 //  DeepLinkOrganizer
 //
-//  Created by Taichi Yuki on 2025/09/13.
+//  Created by UKit Studio on 2025/09/13.
 //
 
 public enum MatchPathPattern: Equatable {
