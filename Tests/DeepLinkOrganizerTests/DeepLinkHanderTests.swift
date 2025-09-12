@@ -11,7 +11,7 @@ import Testing
 @testable import DeepLinkOrganizer
 
 struct MockLink1: DeepLink {
-  let matchPaths: MatchPathPattern = .startsWith(["path"])
+  let matchPaths: MatchPathPattern = .startsWith("/path")
   let handle: (DeepLinkExtraction) -> Void
 }
 
@@ -81,9 +81,9 @@ struct DeepLinkHanderTests {
 }
 
 struct MockLink2: DeepLink {
-  let matchPaths: MatchPathPattern = .startsWith(["users"])
+  let matchPaths: MatchPathPattern = .startsWith("users")
   let queryKeys: [String]? = ["key1", "key2"]
-  let extractionType: ExtractionType? = .nextPathOf("users")
+  let extraction: ExtractionType? = .nextPathOf("users")
   let handle: (DeepLinkExtraction) -> Void
 }
 
@@ -117,7 +117,7 @@ extension DeepLinkHanderTests {
 
 struct MockLink3: DeepLink {
   let matchPaths: MatchPathPattern = .contains(["shops", "products"])
-  let extractionType: ExtractionType? = .nextPathOf("products")
+  let extraction: ExtractionType? = .nextPathOf("products")
   let handle: (DeepLinkExtraction) -> Void
 }
 

@@ -125,7 +125,7 @@ public final class DeepLinkOrganizer {
   }
 
   func extract(comps: DeepLinkComponents, link: any DeepLink) throws -> DeepLinkExtraction {
-    guard let type = link.extractionType,
+    guard let type = link.extraction,
       case .nextPathOf(let path) = type
     else {
       return DeepLinkExtraction(
@@ -148,18 +148,12 @@ public final class DeepLinkOrganizer {
 
     switch expect {
     case .startsWith(let paths):
-      let trimmed = paths.map(trimSlashes)
-      return pathArray.starts(with: trimmed)
+      return pathArray.starts(with: paths.pathArray)
     case .contains(let paths):
-      let trimmed = paths.map(trimSlashes)
-      return trimmed.allSatisfy {
+      return paths.pathArray.allSatisfy {
         pathArray.contains($0)
       }
     }
-  }
-
-  func trimSlashes(_ str: String) -> String {
-    str.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
   }
 }
 

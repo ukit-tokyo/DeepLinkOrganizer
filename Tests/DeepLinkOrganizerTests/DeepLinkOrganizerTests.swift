@@ -6,30 +6,30 @@ import Testing
 struct MockDeepLink: DeepLink {
   let matchPaths: MatchPathPattern
   let queryKeys: [String]?
-  let extractionType: ExtractionType?
+  let extraction: ExtractionType?
   let handle: (DeepLinkExtraction) -> Void
 }
 
 @Suite("DeepLinkOrganizer Tests")
 struct DeepLinkOrganizerTests {
   let mockDeepLink1 = MockDeepLink(
-    matchPaths: .startsWith(["path1"]),
+    matchPaths: .startsWith("path1"),
     queryKeys: nil,
-    extractionType: nil,
+    extraction: nil,
     handle: { _ in }
   )
 
   let mockDeepLink2 = MockDeepLink(
     matchPaths: .startsWith(["path2"]),
     queryKeys: nil,
-    extractionType: nil,
+    extraction: nil,
     handle: { _ in }
   )
 
   let mockDeepLink3 = MockDeepLink(
-    matchPaths: .startsWith(["path3"]),
+    matchPaths: .startsWith("/path3"),
     queryKeys: nil,
-    extractionType: nil,
+    extraction: nil,
     handle: { _ in }
   )
 
@@ -92,7 +92,7 @@ struct DeepLinkOrganizerTests {
     let mockDeepLink = MockDeepLink(
       matchPaths: .startsWith(["this", "is", "path"]),
       queryKeys: nil,
-      extractionType: .nextPathOf("this"),
+      extraction: .nextPathOf("this"),
       handle: { comps in
         #expect(comps.scheme == "mockscheme")
         #expect(comps.path == "/is/path")
@@ -111,22 +111,6 @@ struct DeepLinkOrganizerTests {
 
     let url = URL(string: "mockscheme://this/is/path?key=value")!
     try organizer.handle(url: url)
-  }
-
-  @Test
-  func trimPath() throws {
-    let organizer = DeepLinkOrganizer()
-
-    let expect = "this/is/path"
-
-    let path1 = "/this/is/path/"
-    #expect(organizer.trimSlashes(path1) == expect)
-
-    let path2 = "///this/is/path///"
-    #expect(organizer.trimSlashes(path2) == expect)
-
-    let path3 = "this/is/path"
-    #expect(organizer.trimSlashes(path3) == expect)
   }
 
   @Test
@@ -204,13 +188,13 @@ struct DeepLinkOrganizerTests {
     let expect1 = MockDeepLink(
       matchPaths: .startsWith(["path1"]),
       queryKeys: nil,
-      extractionType: nil,
+      extraction: nil,
       handle: { _ in }
     )
     let expect2 = MockDeepLink(
       matchPaths: .startsWith(["path2"]),
       queryKeys: ["key1", "key2"],
-      extractionType: nil,
+      extraction: nil,
       handle: { _ in }
     )
     organizer.register(deepLinks: [
@@ -248,13 +232,13 @@ struct DeepLinkOrganizerTests {
     let expect1 = MockDeepLink(
       matchPaths: .startsWith(["path1"]),
       queryKeys: nil,
-      extractionType: nil,
+      extraction: nil,
       handle: { _ in }
     )
     let expect2 = MockDeepLink(
       matchPaths: .startsWith(["path2"]),
       queryKeys: ["key1", "key2"],
-      extractionType: nil,
+      extraction: nil,
       handle: { _ in }
     )
     organizer.register(deepLinks: [
@@ -287,7 +271,7 @@ struct DeepLinkOrganizerTests {
     let link1 = MockDeepLink(
       matchPaths: .startsWith(["path1"]),
       queryKeys: nil,
-      extractionType: nil,
+      extraction: nil,
       handle: { _ in }
     )
     let expect1 = DeepLinkExtraction(
@@ -307,7 +291,7 @@ struct DeepLinkOrganizerTests {
     let link2 = MockDeepLink(
       matchPaths: .startsWith(["path3"]),
       queryKeys: nil,
-      extractionType: .nextPathOf("path3"),
+      extraction: .nextPathOf("path3"),
       handle: { _ in }
     )
     let expect2 = DeepLinkExtraction(
