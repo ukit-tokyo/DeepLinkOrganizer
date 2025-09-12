@@ -6,8 +6,8 @@
 //
 
 public enum MatchPathPattern: Equatable {
-  case startsWith(any PathPattern)
-  case contains(any PathPattern)
+  case startsWith(any PathConvertible)
+  case contains(any PathConvertible)
 }
 
 extension MatchPathPattern {
