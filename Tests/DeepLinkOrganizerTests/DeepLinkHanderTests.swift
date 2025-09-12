@@ -11,7 +11,7 @@ import Testing
 @testable import DeepLinkOrganizer
 
 struct MockLink1: DeepLink {
-  let path: String = "/path"
+  let matchPaths: MatchPathPattern = .startsWith(["path"])
   let handle: (DeepLinkExtraction) -> Void
 }
 
@@ -81,9 +81,8 @@ struct DeepLinkHanderTests {
 }
 
 struct MockLink2: DeepLink {
-  let path: String = "/users"
+  let matchPaths: MatchPathPattern = .startsWith(["users"])
   let queryKeys: [String]? = ["key1", "key2"]
-  let matchPathPattern: MatchPathPattern = .startsWith
   let extractionType: ExtractionType? = .nextPathOf("users")
   let handle: (DeepLinkExtraction) -> Void
 }
@@ -112,6 +111,40 @@ extension DeepLinkHanderTests {
     ])
 
     let url = URL(string: "https://host.com/users/123/profile?key1=value1&key2=value2")!
+    try organizer.handle(url: url)
+  }
+}
+
+struct MockLink3: DeepLink {
+  let matchPaths: MatchPathPattern = .contains(["shops", "products"])
+  let extractionType: ExtractionType? = .nextPathOf("products")
+  let handle: (DeepLinkExtraction) -> Void
+}
+
+extension DeepLinkHanderTests {
+  @Test
+  func handlerProductURL() async throws {
+    let organizer = DeepLinkOrganizer()
+
+    let mock = MockLink3 { extraction in
+      let expect = DeepLinkExtraction(
+        scheme: "https",
+        host: "host.com",
+        path: "/shops/123/products/456",
+        fullPath: "host.com/shops/123/products/456",
+        paths: ["host.com", "shops", "123", "products", "456"],
+        targetPath: "456",
+        queryItems: ["key1": "value1", "key2": "value2"]
+      )
+      #expect(extraction == expect)
+    }
+
+    organizer.set(config: .init(universalLinkHost: "host.com", customScheme: nil))
+    organizer.register(deepLinks: [
+      mock
+    ])
+
+    let url = URL(string: "https://host.com/shops/123/products/456?key1=value1&key2=value2")!
     try organizer.handle(url: url)
   }
 }

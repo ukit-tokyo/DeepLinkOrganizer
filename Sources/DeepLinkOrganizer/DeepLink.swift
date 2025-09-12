@@ -12,27 +12,24 @@ public enum ExtractionType: Equatable {
 }
 
 public enum MatchPathPattern: Equatable {
-  case startsWith
-  case contains
+  case startsWith([String])
+  case contains([String])
 }
 
 public protocol DeepLink: Equatable {
-  var path: String { get }
+  var matchPaths: MatchPathPattern { get }
   var queryKeys: [String]? { get }
-  var matchPathPattern: MatchPathPattern { get }
   var extractionType: ExtractionType? { get }
   var handle: (DeepLinkExtraction) -> Void { get }
 }
 
 extension DeepLink {
   static func == (lhs: Self, rhs: Self) -> Bool {
-    lhs.path == rhs.path
+    lhs.matchPaths == rhs.matchPaths
       && lhs.queryKeys == rhs.queryKeys
-      && lhs.matchPathPattern == rhs.matchPathPattern
       && lhs.extractionType == rhs.extractionType
   }
 
   public var queryKeys: [String]? { nil }
-  public var matchPathPattern: MatchPathPattern { .startsWith }
   public var extractionType: ExtractionType? { nil }
 }

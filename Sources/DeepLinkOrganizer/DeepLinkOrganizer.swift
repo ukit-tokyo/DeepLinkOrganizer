@@ -76,7 +76,7 @@ public final class DeepLinkOrganizer {
 
     let firstMatch = deepLinks.first(where: { link in
       guard let queryItems, let keys = link.queryKeys, !keys.isEmpty else {
-        return matchPath(path, expect: link.path, pattern: link.matchPathPattern)
+        return matchPath(path, expect: link.matchPaths)
       }
 
       let keysContained = keys.allSatisfy { key in
@@ -84,10 +84,9 @@ public final class DeepLinkOrganizer {
       }
 
       return keysContained
-      && self.matchPath(
+        && self.matchPath(
           path,
-          expect: link.path,
-          pattern: link.matchPathPattern
+          expect: link.matchPaths
         )
     })
 
@@ -104,7 +103,7 @@ public final class DeepLinkOrganizer {
 
     let firstMatch = deepLinks.first(where: { link in
       guard let queryItems, let keys = link.queryKeys, !keys.isEmpty else {
-        return self.matchPath(path, expect: link.path, pattern: link.matchPathPattern)
+        return self.matchPath(path, expect: link.matchPaths)
       }
 
       let keysContained = keys.allSatisfy { key in
@@ -114,8 +113,7 @@ public final class DeepLinkOrganizer {
       return keysContained
         && self.matchPath(
           path,
-          expect: link.path,
-          pattern: link.matchPathPattern
+          expect: link.matchPaths
         )
     })
 
@@ -144,15 +142,19 @@ public final class DeepLinkOrganizer {
     )
   }
 
-  func matchPath(_ path: String, expect: String, pattern: MatchPathPattern) -> Bool {
-    let expect = trimSlashes(expect)
-    let path = trimSlashes(path)
+  func matchPath(_ path: String, expect: MatchPathPattern) -> Bool {
+    let pathArray = path.components(separatedBy: "/")
+      .filter { !$0.isEmpty }
 
-    return switch pattern {
-    case .startsWith:
-      path.starts(with: expect)
-    case .contains:
-      path.contains(expect)
+    switch expect {
+    case .startsWith(let paths):
+      let trimmed = paths.map(trimSlashes)
+      return pathArray.starts(with: trimmed)
+    case .contains(let paths):
+      let trimmed = paths.map(trimSlashes)
+      return trimmed.allSatisfy {
+        pathArray.contains($0)
+      }
     }
   }
 
